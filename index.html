@@ -1,0 +1,514 @@
+<html><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>shamil,s js music player</title>
+    <link href="https://fonts.googleapis.com/css?family=Righteous&amp;display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        
+        <div class="equalizer">
+                <div class="info">
+                        <div class="songinfo"></div>
+                    </div>
+            <audio id="audio"></audio>
+            <canvas id="equalizer_render"></canvas>
+            <div class="progressBar">
+                <div class="seek">
+                </div>
+            </div>
+        </div>
+        <div class="audio-controls">
+            <div id="previousBtn" class="navigation-btn">
+                <div class="previous"></div>
+                <div class="previous"></div>
+            </div>
+            <div id="playBtn" class="play-btn">
+                <div class="play"></div>
+                <div class="pause">
+                    <div></div>
+                    <div></div>
+                </div>
+            </div>
+            <div id="nextBtn" class="navigation-btn">
+                <div class="next"></div>
+                <div class="next"></div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        let eq,canvas,ctx,previousBtn,nextBtn,playBtn,currentSong,currentSongElem,audioContext,analyzer,source,containerBackCover,equalizerBackCover,songinfo,artist,visualizerId,seekElem,progressBar,seekId;
+//Get DOM elements for reference
+window.addEventListener("DOMContentLoaded",()=>{
+    const songs = [
+        {
+            songURL:"https://cors-anywhere.herokuapp.com/https://bestmusic.uz/play/dl/burito-megahit_(www.bestmusic.uz).mp3",
+            imgURL:"https://static.mk.ru/upload/entities/2016/01/28/articles/detailPicture/08/1d/8e/aa4649327_4624911.jpg",
+            name:"Megahit",
+            artist:"Burrito"
+        },
+        {
+            songURL:"https://cors-anywhere.herokuapp.com/https://www.soundboard.com/mediafiles/23/232191-0b3bc5dc-6f10-4580-a26a-ffd1416230c7.mp3",
+            imgURL:"https://a3-images.myspacecdn.com/images03/26/ce667e1f646e41ee9486b349389a29ce/600x600.jpg",
+            name:"Flying Sphaghetti Monster",
+            artist:"Doctor P"
+        },
+        {
+            songURL:"https://cors-anywhere.herokuapp.com/https://bestmusic.uz/play/dl/alekseev-snov-oskolki_(www.bestmusic.uz).mp3",
+            imgURL:"https://encrypted-tbn0.gstatic.com/images?q=tbn%3AANd9GcR_4idQnhygppqaPZww3vLkZY1XNak7ohPSl3KlYpDfnvJUK2bb",
+            name:"Snov Oskolki",
+            artist:"Alekseev"
+        },
+        {
+            songURL:"https://cors-anywhere.herokuapp.com/http://bestmusic.uz/play/dl/serebro-slomana_(www.bestmusic.uz).mp3",
+            imgURL:"http://d2lubch9d26anb.cloudfront.net/cdn/farfuture/ydf8G66JSDQrLe3gkeBj24nMcq0GyJplTqLkoRKtNZo/mtime:1481005992/sites/default/files/artworks-000180273517-wbenvu-t500x500.jpg",
+            name:"Slomana",
+            artist:"Serebro"
+        },
+        {
+         songURL:"https://dl.dropbox.com/s/r8neonq04xryfeh/Cold%20Water_Major%20Lazer%2CJustin%20Bieber_Friendship%20Day.xoht?dl=0",
+            imgURL:"https://pbs.twimg.com/media/Cn_kdiRUIAEeooP?format=jpg&name=small",
+            name:" cold water",
+            artist:"justin beiber" 
+        },
+        {
+         songURL:"https://dl.dropbox.com/s/cu7txlhrschudfm/DJ%20Snake%20-%20Taki%20Taki%20ft.%20Selena%20Gomez_%20Ozuna_%20Card%28M4A_128K%29.m4a?dl=0",
+            imgURL:"https://upload.wikimedia.org/wikipedia/en/thumb/8/8b/Taki_Taki_%28Official_Single_Cover%29_-_DJ_Snake.png/220px-Taki_Taki_%28Official_Single_Cover%29_-_DJ_Snake.png",
+            name:" taki taki",
+            artist:"dj snake"
+        },
+        {
+         songURL:"https://dl.dropbox.com/s/yc2k5e8kvtg291q/Girls%20Like%20You_Maroon%205_Girls%20Like%20You.xoht?dl=0",
+            imgURL:"https://m.media-amazon.com/images/M/MV5BNWM5OWI2OWUtNjhiOS00MWYxLTlhZmUtMGZjYzBlNDA3M2MyXkEyXkFqcGdeQXVyNDQ5MDYzMTk@._V1_QL50_SY1000_SX1000_AL_.jpg",
+            name:" girls like you",
+            artist:"cardi b"
+        },
+        {
+         songURL:"https://dl.dropbox.com/s/e53xcg3ur11mqlk/Ed%20Sheeran%20-%20Shape%20Of%20You%20%5BOfficial%5D%20%281%29.mp3?dl=0",
+            imgURL:"https://m.media-amazon.com/images/I/81PPDaaySeL._SS500_.jpg",
+            name:"shape of you",
+            artist:"ed sheeran"
+        },
+        {
+         songURL:"https://dl.dropbox.com/s/du1uuk9mttlm3tf/I%20Don%27t%20Care_Max%20Martin%2CMax%20Martin%2CMax%20Martin%2CMax%20Martin%2CMax%20Martin_I%20Don%27t%20Care.xoht?dl=0",
+            imgURL:"https://images.popbuzz.com/images/50942?crop=16_9&width=660&relax=1&signature=yOpdfdBOnxJUHVp-gwR_MWqiiag=",
+            name:"i don,t care",
+            artist:"justin beiber"
+        },
+        {
+         songURL:"https://dl.dropbox.com/s/xa32b56cmhtk7h6/Shawn%20Mendes%20ft.%20Camila%20Cabello%20-%20Se%C3%B1orita%20%281%29.mp3?dl=0",
+            imgURL:"https://images.news18.com/ibnlive/uploads/2019/07/Shawn-Mendes-Camila-Cabello.jpg?impolicy=website&width=362&height=240",
+            name:"senorita",
+            artist:"Camilla Cabello, Shawn Mendis",
+        },
+        {
+         songURL:"https://dl.dropbox.com/s/k53x0acfamfesg7/Sia-Cheap-Thrills-ft.-Sean-Paul.mp3?dl=0",
+            imgURL:"https://wallpapercave.com/wp/wp4523436.jpg",
+            name:"Cheap Thrills",
+            artist:"Sean Paul" ,
+        },   
+        {
+         songURL:"https://dl.dropbox.com/s/t2c46404cyrygr1/Ellie%20Goulding%20-%20Love%20Me%20Like%20You%20Do%20.mp3?dl=0",
+            imgURL:"https://upload.wikimedia.org/wikipedia/en/1/17/Ellie_Goulding_-_Love_Me_Like_You_Do.png",
+            name:"Love Me Like You Do",
+            artist:"Ellie Goudling",
+        },   
+        {
+         songURL:"https://dl.dropbox.com/s/9m1mv413y8typji/Alan%20Walker%20-%20Alone.mp3?dl=0",
+            imgURL:"https://upload.wikimedia.org/wikipedia/en/thumb/b/ba/Alan_Walker_-_Alone.png/220px-Alan_Walker_-_Alone.png",
+            name:"Alone",
+            artist:"Alan Walker",   
+        },   
+        {
+         songURL:"https://dl.dropbox.com/s/4dr5sfmoyi9572k/Alan%20Walker%20-%20Faded.mp3?dl=0",
+            imgURL:"https://upload.wikimedia.org/wikipedia/en/thumb/d/da/Alan_Walker_-_Faded.png/220px-Alan_Walker_-_Faded.png",
+            name:"Faded",
+            artist:"Alan Walker",
+        },   
+        {
+         songURL:"https://dl.dropbox.com/s/j1y8td9gbtg8j2q/Lil%20Nas%20X%20-%20Old%20Town%20Road%20ft%20Billy%20Ray%20Cyrus.mp3?dl=0",
+            imgURL:"https://musicrow.com/wp-content/uploads/2019/05/Old-Town-Road-poster.jpg",
+            name:"Old Town Road",
+            artist:"Lil X Nas ",
+        },   
+        {
+         songURL:"https://dl.dropbox.com/s/5v7lazyj1x0yz5r/Luis%20Fonsi%20-%20Despacito%20ft%20Daddy%20Yankee.mp3?dl=0",
+            imgURL:"https://m.media-amazon.com/images/M/MV5BNmQ4YzYwOWMtODBkOC00YjljLTkzMGYtYjY2OGU1N2NiODE5XkEyXkFqcGdeQXVyNDUzOTQ5MjY@._V1_UY120_CR19,0,82,120_AL_.jpg",
+            name:"Despacito",
+            artist:"Daddy Yankee, Louis Foncy",  
+        }
+        ]
+        
+        //Pre load images into array - Caching images
+        //This is for quicker loading of images while changing songs reduce HTTP requests
+        songs.map((song) => {
+            const img = new Image();
+            img.src = song.imgURL;
+        });
+        
+ currentSong = songs[0];
+ eq = document.querySelector('.equalizer');
+ canvas = document.getElementById('equalizer_render');
+ previousBtn = document.getElementById('previousBtn');
+ nextBtn = document.getElementById('nextBtn');
+ playBtn = document.getElementById('playBtn');
+ containerBackCover = document.querySelector('.container');
+ equalizerBackCover = document.querySelector('.equalizer');
+ songinfo = document.querySelector(".songinfo");
+ seekElem = document.querySelector(".seek");
+ progressBar = document.querySelector(".progressBar");
+ctx = canvas.getContext("2d");
+
+const setSongInfo = ()=>{
+    songinfo.innerText = `${currentSong.artist} - ${currentSong.name}`;
+}
+ // drawCanvas to match the container width and height
+ const initCanvas = (()=>{
+     canvas.width = eq.clientWidth;
+     canvas.height = eq.clientHeight;
+ })();
+
+ const initVisualizer = ()=> {
+     if(!source){
+        source = audioContext.createMediaElementSource(currentSongElem);
+        source.connect(analyzer);
+        analyzer.connect(audioContext.destination);
+     }
+      frameLooper();
+      seekLooper();
+ };
+
+ const seekLooper = ()=>{
+     seekId = window.requestAnimationFrame(seekLooper);
+     let newSize = currentSongElem.currentTime*eq.clientWidth/currentSongElem.duration;
+    seekElem.style.width = newSize +'px';
+ }
+
+ const frameLooper = () =>{
+     visualizerId = window.requestAnimationFrame(frameLooper);
+     const fbc_array = new Uint8Array(analyzer.frequencyBinCount);
+     analyzer.getByteFrequencyData(fbc_array);
+     ctx.clearRect(0,0,canvas.width,canvas.height);
+     ctx.fillStyle = "#00CCFF";
+     const bars = 100;
+     const barWidth = canvas.width/100;
+     for (var i =0;i<bars;i++){
+         let barX = i*barWidth;
+         let barHeight = -(fbc_array[i]/2);
+         ctx.fillRect(barX,canvas.height,barWidth,barHeight);
+     }
+ };
+
+ const setCover = () => {
+     containerBackCover.style.backgroundImage = `url(${currentSong.imgURL})`;
+     equalizerBackCover.style.backgroundImage = `url(${currentSong.imgURL})`;
+ }
+
+const setControls = ()=>{
+    if(currentSongElem.paused){
+    document.getElementsByClassName('play')[0].style.display = "block";
+    document.getElementsByClassName('pause')[0].style.display = "none";
+}else if(!currentSong.paused){
+    document.getElementsByClassName('play')[0].style.display = "none";
+    document.getElementsByClassName('pause')[0].style.display = "flex";
+}
+}
+
+ const loadSong = () => {
+    setSongInfo();
+    currentSongElem.setAttribute('src',currentSong.songURL);
+    seekElem.style.width = 0+'px';
+    setControls();
+    setCover();
+    currentSongElem.load();
+};
+
+
+ const createCurrentSongElem = (()=>{
+     currentSongElem = new Audio();
+     currentSongElem.crossOrigin = "anonymous";
+     currentSongElem.src = currentSong.songURL;
+     loadSong();
+ })();
+ 
+
+const reDrawCanvas = ()=>{
+    canvas.width = eq.clientWidth;
+    canvas.height = eq.clientHeight;
+};
+
+const playCurrentSong = ()=>{
+    if(!audioContext && !analyzer){
+        audioContext = new (window.AudioContext||window.webkitAudioContext)();
+        analyzer = audioContext.createAnalyser();
+    }
+window.cancelAnimationFrame(visualizerId);
+window.cancelAnimationFrame(seekId);
+if(currentSongElem.paused) {
+    currentSongElem.play();
+    initVisualizer();
+} else{
+    currentSongElem.pause();
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+}
+setControls();
+};
+
+const goToPrevSong = () =>{
+    window.cancelAnimationFrame(visualizerId);
+    window.cancelAnimationFrame(seekId);
+    const currentIndex = songs.indexOf(currentSong);
+    const lastIndex = songs.length-1;
+    if(currentIndex == 0) {
+        currentSong = songs[lastIndex];
+    }else {
+        currentSong = songs[currentIndex - 1];
+    }
+    loadSong();
+    };
+
+    const goToNextSong = () => {
+    window.cancelAnimationFrame(visualizerId);
+    window.cancelAnimationFrame(seekId);
+    const currentIndex = songs.indexOf(currentSong);
+    const lastIndex = songs.length - 1;
+    if(currentIndex == lastIndex){
+        currentSong = songs[0]
+    }else {
+        currentSong = songs[currentIndex + 1];
+    }
+    loadSong();
+    };
+
+window.addEventListener("resize",()=>{
+reDrawCanvas();
+});
+
+playBtn.addEventListener("click",()=>{
+    playCurrentSong();
+});
+previousBtn.addEventListener("click",()=>{
+    goToPrevSong();
+});
+nextBtn.addEventListener("click",()=>{
+    goToNextSong();
+});
+
+let dragstart;
+seekElem.addEventListener("touchstart",(event)=>{
+   //cancel animation for seek and visualizer
+    window.cancelAnimationFrame(seekId);
+   window.cancelAnimationFrame(visualizerId);
+   currentSongElem.pause();
+    setControls();
+   dragstart = event.touches[0].pageX;
+},{passive:true});
+
+seekElem.addEventListener("touchmove",(event)=>{
+    let dragmove = event.touches[0].pageX;
+    if(dragmove > dragstart){
+         seekElem.style.width = parseFloat(seekElem.style.width,10) + 1 +'px';
+    }else {
+        seekElem.style.width = parseFloat(seekElem.style.width,10) - 1 +'px';
+    }
+},{passive:true});
+
+seekElem.addEventListener("touchend",(event)=>{
+    const seekPosition= parseFloat(seekElem.offsetWidth,10);
+    const totalLength = parseFloat(progressBar.offsetWidth,10);
+    const newTime = (seekPosition/totalLength)*currentSongElem.duration;
+    currentSongElem.currentTime = newTime;
+    playCurrentSong();
+});
+
+currentSongElem.addEventListener("ended",()=>{
+    currentSongElem.currentTime = 0;
+    goToNextSong();
+    playCurrentSong();
+});
+});
+alert("An audio player built using vanilla JS.\n Please wait for a while if music does not play after pressing play.\nIf found an issue leave a comment else leave a like..\n v1. Added a seek for touch screen devices.made by shamil enjoy");
+
+</script> 
+   <style type="text/css">
+       * {
+    margin:0;
+    padding:0;
+    box-sizing: border-box;
+}
+body {
+    font-family: 'Righteous', cursive;
+}
+.container {
+    background-size: cover;
+    background-position: top;
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+}
+
+.info {
+    width:100%;
+    height:10%;
+    text-align: center;
+}
+
+
+.info .songinfo {
+    font-size: 17px;
+    height: 80%;
+    line-height: 1.2;
+    background-color: rgba(48, 46, 46, 0.712);
+    color: lightblue;
+}
+
+.equalizer {
+    background-size: cover;
+    background-position: top;
+    width: 80vw;
+    height:100vw;
+    position: absolute;
+    top:40%;
+    left:50%;
+    transform: translate(-50%,-50%);
+}
+#equalizer_render {
+    background-color:rgba(48, 46, 46, 0.465);
+}
+
+.progressBar {
+    background-color: rgba(143, 138, 138, 0.657);
+    width: 100%;
+    height: 2%;
+    margin-top: -7px;
+}
+
+.seek {
+    background-color: yellow;
+    position: relative;
+    width: 0px;
+    height: 100%;
+    pointer-events: none;
+    background: linear-gradient(34deg, #ff00d6, #db4333, #9f33db, #68db33, #db33c6);
+    background-size: 1200% 1200%; 
+    animation: gradient 5s ease infinite;
+}
+.seek::after{
+    content: "";
+    /*Use it to set drag event on circle seek*/
+    pointer-events:all;
+    display: block;
+    position: absolute;
+    margin: -10px 0 0 calc(100% - 6px);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color:green;
+    background: linear-gradient(34deg, #ffecd6, #db4333, #9f33db, #68db33, #db33c6);
+    background-size: 1200% 1200%; 
+    animation: gradient 5s ease infinite;
+}
+
+@keyframes gradient {
+    0%{background-position:0% 88%}
+    50%{background-position:100% 13%}
+    100%{background-position:0% 88%}
+}
+
+.audio-controls {
+    border-radius: 10px;
+    background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.582),#757575);
+    display:flex;
+    flex-direction: row;
+    width :80%;
+    height: 7%;
+    position: absolute;
+    bottom:10%;
+    left:10%;
+}
+div[class*="-btn"] {
+    width: 20%;
+    height: 80%;
+    margin: 1% auto;
+}
+div[class*="-btn"]:hover {
+    cursor: pointer;
+}
+
+div[class*="-btn"]:active {
+    animation: moveDownUp 0.1s ease-in-out reverse;
+}
+
+@keyframes moveDownUp {
+    0% {
+        transform:translateY(0);
+    }
+    100% {
+        transform: translateY(2px);
+    }    
+}
+.navigation-btn {
+    display: flex;
+    flex-direction: row;
+}
+
+.navigation-btn .previous {
+    width:50%;
+    margin-top: 5%;
+    height: 80%;
+    background-image: linear-gradient(to top left,red,white);
+    clip-path : polygon(0 50%,100% 0,100% 100%);
+}
+
+.navigation-btn .next {
+    width:50%;
+    margin-top: 5%;
+    height: 80%;
+    background-image: linear-gradient(to top right,rgba(0, 0, 255, 0.972),white);
+    clip-path: polygon(0 0,100% 50%,0 100%);
+}
+
+.play-btn .play{
+    width: 50%;
+    height: 80%;
+    margin: 5% 29% 0 27%;
+    background-image:linear-gradient(to left bottom, red, yellow) ;
+    clip-path: polygon(0 0,100% 50%,0 100%);
+}
+
+.play-btn .pause {
+    width: 50%;
+    height: 80%;
+    margin: 5% 29% 0 27%;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    display: none;
+}
+
+.play-btn .pause div{
+    width: 30%;
+    height: 100%;
+    margin: 0 5%;
+    background-color:lightblue;
+}
+
+
+@media only screen and (orientation:landscape) {
+    .equalizer {
+        width: 70vw;
+        height:60vh;
+        top:40%;
+    }
+
+    .audio-controls {
+        width: 40%;
+        height:8%;
+        left: 30%;
+    }
+}
+
+        
+
+</body></html></script></body></html></style></body></html>
